@@ -1,0 +1,2 @@
+{:deps {quil/quil {:mvn/version "4.0.0-SNAPSHOT-1"}}
+ :paths ["src" "resources"]}
