@@ -80,8 +80,7 @@
                              0
                              0
                              (/ width (count row))
-                             (/ width (count row))
-                             5))))))))))
+                             (/ width (count row))))))))))))
 
 
 
@@ -100,9 +99,10 @@
   (let [next-allowed-in (atom n)]
     (fn
       []
-      (swap! next-allowed-in - *dt*)
+      (println *dt*
+               (swap! next-allowed-in - *dt*))
       (when
-          (<= next-allowed-in 0)
+          (<= @next-allowed-in 0)
           (reset! next-allowed-in n)
           (op)))))
 
@@ -118,9 +118,7 @@
 
 (def
   user-select-next
-  (n-seconds-cooldown
-   1
-   select-next!))
+  (n-seconds-cooldown 1 select-next!))
 
 (defn
   draw
@@ -129,13 +127,16 @@
         dt (/
             (-
              current-tick
-             (:last-tick state 0))
-            1000.0)]
+             (:last-tick @state 0))
+            1000.0)
+        _ (swap! state assoc :last-tick current-tick)
+
+        ]
     (binding
         [*dt* dt]
         (q/stroke 0)
         (q/background 200)
-        (q/stroke-weight 1)
+        (q/stroke-weight 0.5)
         (q/fill 256 0 0)
         (when
             (q/key-pressed?)
@@ -147,8 +148,8 @@
         (when-let
             [data
              (first (:train (:data @state)))]
-            (let [width 180
-                  height 180]
+            (let [width 300
+                  height 300]
               (q/with-translation
                   [10 10]
                   (arc-grid
