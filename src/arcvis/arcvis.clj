@@ -4,8 +4,10 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.data.json :as json]
-   [arcvis.lib :refer [*dt*] :as lib]
+   [ftlm.vehicles.art.lib :refer [*dt*] :as lib]
    [quil.core :as q]))
+
+(def max-grid-size 30)
 
 (defn setup []
   (q/frame-rate 20))
@@ -41,46 +43,27 @@
   (memoize
    (fn [i] (repeatedly 3 #(rand-int 256)))))
 
-(defn
-  arc-grid
+(defn arc-grid
   [{:keys [data width height pos title]}]
   (q/with-translation
       pos
       (q/text-size 25)
-      (q/with-fill
-          0
-          (q/text title 20 20))
+      (q/with-fill 0 (q/text title 20 20))
       (q/with-translation
           [0 30]
-        ;; (arc-grid
-        ;;  {:data [[0 7 7] [7 7 7] [0 7 7]]
-        ;;   ;; [[7 0 7] [7 0 7] [7 7 0]]
-        ;;   ;; (-> data  :train (nth 0) :output)
-        ;;   :pos [0 0]
-        ;;   :width 180
-        ;;   :height 180})
           (doall
-           (for
-               [[row-idx row]
-                (map-indexed vector data)]
-               (doall
-                (for
-                    [[col-idx item]
-                     (map-indexed vector row)]
-                    (q/with-translation
-                        [(*
-                          col-idx
-                          (/ width (count row)))
-                         (*
-                          row-idx
-                          (/ height (count data)))]
-                        (q/with-fill
-                            (color item)
-                            (q/rect
-                             0
-                             0
-                             (/ width (count row))
-                             (/ width (count row))))))))))))
+           (for [[row-idx row] (map-indexed vector data)]
+             (doall
+              (for [[col-idx item] (map-indexed vector row)]
+                (q/with-translation
+                    [(* col-idx (/ width (count row)))
+                     (* row-idx (/ height (count data)))]
+                    (q/with-fill
+                        (color item)
+                        (q/rect 0
+                                0
+                                (/ width (count row))
+                                (/ width (count row))))))))))))
 
 
 
@@ -258,3 +241,64 @@
 
 ;;
 ;;
+
+
+(read-data
+ (first (into
+         []
+         (filter
+          (comp
+           #(str/ends-with? % "json")
+           str)
+          (file-seq
+           (io/file
+            "/home/benj/repos/ARC-AGI/data/training/"))))))
+
+
+(->>
+ (into []
+       (filter (comp #(str/ends-with? % "json") str)
+               (file-seq
+                (io/file
+                 "/home/benj/repos/ARC-AGI/data/training/"))))
+ (map read-data)
+ (mapcat (juxt :train :test))
+ (mapcat identity)
+ ;; (mapcat
+ ;;  (juxt :input :output))
+ ;; (map (juxt count (comp count first)))
+ first)
+
+
+
+
+(map #(apply max %)
+     (apply map vector
+            (->>
+             (into []
+                   (filter (comp #(str/ends-with? % "json") str)
+                           (file-seq
+                            (io/file
+                             "/home/benj/repos/ARC-AGI/data/training/"))))
+             (map read-data)
+             (map :train)
+             (mapcat identity)
+             ;; (map :input)
+             (mapcat (juxt :input :output))
+             (map (juxt count (comp count first))))))
+
+
+(map #(apply max %)
+     (apply map vector
+            (->>
+             (into []
+                   (filter (comp #(str/ends-with? % "json") str)
+                           (file-seq
+                            (io/file
+                             "/home/benj/repos/ARC-AGI/data/training/"))))
+             (map read-data)
+             (map :test)
+             (mapcat identity)
+             ;; (map :input)
+             (mapcat (juxt :input :output))
+             (map (juxt count (comp count first))))))
